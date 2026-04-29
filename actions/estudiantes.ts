@@ -13,6 +13,8 @@ export async function getAllStudents(): Promise<Estudiante[]> {
     const data = await response.json();
 
     if(Array.isArray(data?.data)) return data.data;
+
+    console.error("Error al obtener la data:", data)
      
     return [];
 }
