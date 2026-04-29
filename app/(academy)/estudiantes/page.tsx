@@ -13,6 +13,9 @@ export default async function ObtenerEstudiantes() {
               <th className="text-left p-3">Paterno</th>
               <th className="text-left p-3">Materno</th>
               <th className="text-left p-3">Direccion</th>
+              <th className="text-left p-3">Sexo</th>
+                <th className="text-left p-3">Etnia</th>
+
             </tr>
           </thead>
 
@@ -26,6 +29,8 @@ export default async function ObtenerEstudiantes() {
                 <td className="p-3">{est.paterno}</td>
                 <td className="p-3">{est.materno}</td>
                 <td className="p-3">{est.direccion}</td>
+                <td className="p-3">{est.sexo_id}</td>
+                <td className="p-3">{est.etnia_id}</td>
               </tr>
             ))}
           </tbody>
