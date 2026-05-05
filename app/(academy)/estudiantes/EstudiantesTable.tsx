@@ -7,9 +7,138 @@ type Props = {
   estudiantes: Estudiante[];
 };
 
+type FormData = {
+  nombres: string;
+  paterno: string;
+  materno: string;
+  direccion: string;
+  sexo_id: number;
+  etnia_id: number;
+};
+
+const emptyForm: FormData = {
+  nombres: "",
+  paterno: "",
+  materno: "",
+  direccion: "",
+  sexo_id: 1,
+  etnia_id: 1,
+};
+
 export default function EstudiantesTable({ estudiantes: initial }: Props) {
   const [estudiantes, setEstudiantes] = useState<Estudiante[]>(initial);
   const [loadingId, setLoadingId] = useState<number | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [formData, setFormData] = useState<FormData>(emptyForm);
+  const [viewStudent, setViewStudent] = useState<Estudiante | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === "sexo_id" || name === "etnia_id" ? Number(value) : value,
+    }));
+  }
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      setSubmitting(true);
+      const res = await fetch("/api/estudiantes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err?.error || "Error al crear el estudiante");
+        return;
+      }
+
+      const data = await res.json();
+      const nuevo: Estudiante = data?.data || data;
+      setEstudiantes((prev) => [...prev, nuevo]);
+      setFormData(emptyForm);
+      setShowForm(false);
+    } catch (error) {
+      console.error(error);
+      alert("Error al crear el estudiante");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleGetOne(id: number) {
+    try {
+      setLoadingId(id);
+      const res = await fetch(`/api/estudiantes/${id}`);
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err?.error || "Error al obtener el estudiante");
+        return;
+      }
+
+      const data = await res.json();
+      const estudiante: Estudiante = data?.data || data;
+      setViewStudent(estudiante);
+    } catch (error) {
+      console.error(error);
+      alert("Error al obtener el estudiante");
+    } finally {
+      setLoadingId(null);
+    }
+  }
+
+  function handleEditClick(est: Estudiante) {
+    setEditingId(est.id);
+    setFormData({
+      nombres: est.nombres,
+      paterno: est.paterno,
+      materno: est.materno || "",
+      direccion: est.direccion,
+      sexo_id: est.sexo_id,
+      etnia_id: est.etnia_id,
+    });
+    setShowForm(true);
+  }
+
+  async function handleUpdate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingId) return;
+
+    try {
+      setSubmitting(true);
+      const res = await fetch(`/api/estudiantes/${editingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err?.error || "Error al actualizar el estudiante");
+        return;
+      }
+
+      const data = await res.json();
+      const actualizado: Estudiante = data?.data || data;
+      setEstudiantes((prev) =>
+        prev.map((e) => (e.id === editingId ? actualizado : e)),
+      );
+      setFormData(emptyForm);
+      setEditingId(null);
+      setShowForm(false);
+    } catch (error) {
+      console.error(error);
+      alert("Error al actualizar el estudiante");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   async function handleDelete(id: number) {
     const confirmDelete = confirm(
@@ -36,8 +165,131 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
     }
   }
 
+  function handleCancelForm() {
+    setShowForm(false);
+    setEditingId(null);
+    setFormData(emptyForm);
+  }
+
   return (
     <div className="max-w-4xl mx-auto p-4">
+      {/* Modal ver estudiante */}
+      {viewStudent && (
+        <div className="mb-4 p-4 border rounded-lg bg-white dark:bg-gray-900 shadow">
+          <h3 className="text-lg font-semibold mb-2">Detalle del Estudiante</h3>
+          <p><strong>Nombres:</strong> {viewStudent.nombres}</p>
+          <p><strong>Paterno:</strong> {viewStudent.paterno}</p>
+          <p><strong>Materno:</strong> {viewStudent.materno || "-"}</p>
+          <p><strong>Dirección:</strong> {viewStudent.direccion}</p>
+          <p><strong>Sexo:</strong> {viewStudent.sexo_id}</p>
+          <p><strong>Etnia:</strong> {viewStudent.etnia_id}</p>
+          <button
+            onClick={() => setViewStudent(null)}
+            className="mt-3 px-3 py-1 text-sm font-medium text-white bg-gray-600 rounded hover:bg-gray-700"
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
+
+      {/* Formulario crear/editar */}
+      {showForm && (
+        <form
+          onSubmit={editingId ? handleUpdate : handleCreate}
+          className="mb-4 p-4 border rounded-lg bg-white dark:bg-gray-900 shadow"
+        >
+          <h3 className="text-lg font-semibold mb-3">
+            {editingId ? "Editar Estudiante" : "Crear Estudiante"}
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              name="nombres"
+              value={formData.nombres}
+              onChange={handleChange}
+              placeholder="Nombres"
+              required
+              className="p-2 border rounded dark:bg-gray-800"
+            />
+            <input
+              name="paterno"
+              value={formData.paterno}
+              onChange={handleChange}
+              placeholder="Paterno"
+              required
+              className="p-2 border rounded dark:bg-gray-800"
+            />
+            <input
+              name="materno"
+              value={formData.materno}
+              onChange={handleChange}
+              placeholder="Materno"
+              className="p-2 border rounded dark:bg-gray-800"
+            />
+            <input
+              name="direccion"
+              value={formData.direccion}
+              onChange={handleChange}
+              placeholder="Dirección"
+              required
+              className="p-2 border rounded dark:bg-gray-800"
+            />
+            <input
+              name="sexo_id"
+              type="number"
+              value={formData.sexo_id}
+              onChange={handleChange}
+              placeholder="Sexo ID"
+              required
+              className="p-2 border rounded dark:bg-gray-800"
+            />
+            <input
+              name="etnia_id"
+              type="number"
+              value={formData.etnia_id}
+              onChange={handleChange}
+              placeholder="Etnia ID"
+              required
+              className="p-2 border rounded dark:bg-gray-800"
+            />
+          </div>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-60"
+            >
+              {submitting
+                ? "Guardando..."
+                : editingId
+                  ? "Actualizar"
+                  : "Crear"}
+            </button>
+            <button
+              type="button"
+              onClick={handleCancelForm}
+              className="px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded hover:bg-gray-700"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Botón crear */}
+      {!showForm && (
+        <button
+          onClick={() => {
+            setEditingId(null);
+            setFormData(emptyForm);
+            setShowForm(true);
+          }}
+          className="mb-4 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700"
+        >
+          Crear Estudiante
+        </button>
+      )}
+
+      {/* Tabla */}
       <div className="overflow-x-auto rounded-lg shadow-sm bg-white/60 dark:bg-black/40">
         <table className="w-full text-sm table-auto">
           <thead className="bg-gray-100 dark:bg-gray-800">
@@ -64,10 +316,23 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
                 <td className="p-3">{est.direccion}</td>
                 <td className="p-3">{est.sexo_id}</td>
                 <td className="p-3">{est.etnia_id}</td>
-                <td className="p-3">
+                <td className="p-3 flex gap-2">
+                  <button
+                    onClick={() => handleGetOne(est.id)}
+                    className="px-3 py-1 text-sm font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700 disabled:opacity-60"
+                    disabled={loadingId === est.id}
+                  >
+                    Ver
+                  </button>
+                  <button
+                    onClick={() => handleEditClick(est)}
+                    className="px-3 py-1 text-sm font-medium text-white bg-amber-600 rounded hover:bg-amber-700"
+                  >
+                    Editar
+                  </button>
                   <button
                     onClick={() => handleDelete(est.id)}
-                    className="inline-flex items-center gap-2 px-3 py-1 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-60"
+                    className="px-3 py-1 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-60"
                     disabled={loadingId === est.id}
                   >
                     {loadingId === est.id ? "Eliminando..." : "Eliminar"}
