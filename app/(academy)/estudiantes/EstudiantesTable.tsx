@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import { Estudiante } from "@/types/estudiante.interface";
-
-type Props = {
-  estudiantes: Estudiante[];
-};
+import EstudianteForm from "./EstudianteForm";
+import EstudianteDetalle from "./EstudianteDetalle";
 
 type FormData = {
   nombres: string;
@@ -23,6 +21,10 @@ const emptyForm: FormData = {
   direccion: "",
   sexo_id: 1,
   etnia_id: 1,
+};
+
+type Props = {
+  estudiantes: Estudiante[];
 };
 
 export default function EstudiantesTable({ estudiantes: initial }: Props) {
@@ -173,109 +175,24 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
 
   return (
     <div className="max-w-4xl mx-auto p-4">
-      {/* Modal ver estudiante */}
       {viewStudent && (
-        <div className="mb-4 p-4 border rounded-lg bg-white dark:bg-gray-900 shadow">
-          <h3 className="text-lg font-semibold mb-2">Detalle del Estudiante</h3>
-          <p><strong>Nombres:</strong> {viewStudent.nombres}</p>
-          <p><strong>Paterno:</strong> {viewStudent.paterno}</p>
-          <p><strong>Materno:</strong> {viewStudent.materno || "-"}</p>
-          <p><strong>Dirección:</strong> {viewStudent.direccion}</p>
-          <p><strong>Sexo:</strong> {viewStudent.sexo_id}</p>
-          <p><strong>Etnia:</strong> {viewStudent.etnia_id}</p>
-          <button
-            onClick={() => setViewStudent(null)}
-            className="mt-3 px-3 py-1 text-sm font-medium text-white bg-gray-600 rounded hover:bg-gray-700"
-          >
-            Cerrar
-          </button>
-        </div>
+        <EstudianteDetalle
+          estudiante={viewStudent}
+          onClose={() => setViewStudent(null)}
+        />
       )}
 
-      {/* Formulario crear/editar */}
       {showForm && (
-        <form
+        <EstudianteForm
+          formData={formData}
+          editingId={editingId}
+          submitting={submitting}
+          onChange={handleChange}
           onSubmit={editingId ? handleUpdate : handleCreate}
-          className="mb-4 p-4 border rounded-lg bg-white dark:bg-gray-900 shadow"
-        >
-          <h3 className="text-lg font-semibold mb-3">
-            {editingId ? "Editar Estudiante" : "Crear Estudiante"}
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
-            <input
-              name="nombres"
-              value={formData.nombres}
-              onChange={handleChange}
-              placeholder="Nombres"
-              required
-              className="p-2 border rounded dark:bg-gray-800"
-            />
-            <input
-              name="paterno"
-              value={formData.paterno}
-              onChange={handleChange}
-              placeholder="Paterno"
-              required
-              className="p-2 border rounded dark:bg-gray-800"
-            />
-            <input
-              name="materno"
-              value={formData.materno}
-              onChange={handleChange}
-              placeholder="Materno"
-              className="p-2 border rounded dark:bg-gray-800"
-            />
-            <input
-              name="direccion"
-              value={formData.direccion}
-              onChange={handleChange}
-              placeholder="Dirección"
-              required
-              className="p-2 border rounded dark:bg-gray-800"
-            />
-            <input
-              name="sexo_id"
-              type="number"
-              value={formData.sexo_id}
-              onChange={handleChange}
-              placeholder="Sexo ID"
-              required
-              className="p-2 border rounded dark:bg-gray-800"
-            />
-            <input
-              name="etnia_id"
-              type="number"
-              value={formData.etnia_id}
-              onChange={handleChange}
-              placeholder="Etnia ID"
-              required
-              className="p-2 border rounded dark:bg-gray-800"
-            />
-          </div>
-          <div className="mt-3 flex gap-2">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-60"
-            >
-              {submitting
-                ? "Guardando..."
-                : editingId
-                  ? "Actualizar"
-                  : "Crear"}
-            </button>
-            <button
-              type="button"
-              onClick={handleCancelForm}
-              className="px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded hover:bg-gray-700"
-            >
-              Cancelar
-            </button>
-          </div>
-        </form>
+          onCancel={handleCancelForm}
+        />
       )}
 
-      {/* Botón crear */}
       {!showForm && (
         <button
           onClick={() => {
@@ -289,7 +206,6 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
         </button>
       )}
 
-      {/* Tabla */}
       <div className="overflow-x-auto rounded-lg shadow-sm bg-white/60 dark:bg-black/40">
         <table className="w-full text-sm table-auto">
           <thead className="bg-gray-100 dark:bg-gray-800">
