@@ -1,5 +1,5 @@
 import { getAllStudents } from "@/actions";
-import EstudiantesTable from "./EstudiantesTable";
+import EstudiantesTable from "./components/EstudiantesTable";
 
 export default async function ObtenerEstudiantes() {
   const estudiantes = await getAllStudents();
