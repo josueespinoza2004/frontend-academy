@@ -35,55 +35,67 @@ export default function EstudianteForm({
         {editingId ? "Editar Estudiante" : "Crear Estudiante"}
       </h3>
       <div className="grid grid-cols-2 gap-3">
-        <input
-          name="nombres"
-          value={formData.nombres}
-          onChange={onChange}
-          placeholder="Nombres"
-          required
-          className="p-2 border rounded dark:bg-gray-800"
-        />
-        <input
-          name="paterno"
-          value={formData.paterno}
-          onChange={onChange}
-          placeholder="Paterno"
-          required
-          className="p-2 border rounded dark:bg-gray-800"
-        />
-        <input
-          name="materno"
-          value={formData.materno}
-          onChange={onChange}
-          placeholder="Materno"
-          className="p-2 border rounded dark:bg-gray-800"
-        />
-        <input
-          name="direccion"
-          value={formData.direccion}
-          onChange={onChange}
-          placeholder="Dirección"
-          required
-          className="p-2 border rounded dark:bg-gray-800"
-        />
-        <input
-          name="sexo_id"
-          type="number"
-          value={formData.sexo_id}
-          onChange={onChange}
-          placeholder="Sexo ID"
-          required
-          className="p-2 border rounded dark:bg-gray-800"
-        />
-        <input
-          name="etnia_id"
-          type="number"
-          value={formData.etnia_id}
-          onChange={onChange}
-          placeholder="Etnia ID"
-          required
-          className="p-2 border rounded dark:bg-gray-800"
-        />
+        <div>
+          <label className="block text-sm font-medium mb-1">Nombres</label>
+          <input
+            name="nombres"
+            value={formData.nombres}
+            onChange={onChange}
+            required
+            className="w-full p-2 border rounded dark:bg-gray-800"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Paterno</label>
+          <input
+            name="paterno"
+            value={formData.paterno}
+            onChange={onChange}
+            required
+            className="w-full p-2 border rounded dark:bg-gray-800"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Materno</label>
+          <input
+            name="materno"
+            value={formData.materno}
+            onChange={onChange}
+            className="w-full p-2 border rounded dark:bg-gray-800"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Dirección</label>
+          <input
+            name="direccion"
+            value={formData.direccion}
+            onChange={onChange}
+            required
+            className="w-full p-2 border rounded dark:bg-gray-800"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Sexo ID</label>
+          <input
+            name="sexo_id"
+            type="number"
+            value={formData.sexo_id}
+            onChange={onChange}
+            required
+            className="w-full p-2 border rounded dark:bg-gray-800"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Etnia ID</label>
+          <input
+            name="etnia_id"
+            type="number"
+            value={formData.etnia_id}
+            onChange={onChange}
+            required
+            className="w-full p-2 border rounded dark:bg-gray-800"
+          />
+        </div>
       </div>
       <div className="mt-3 flex gap-2">
         <button
