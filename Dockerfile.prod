@@ -1,0 +1,37 @@
+# 1. Dependencias
+
+FROM node:20-alpine AS deps
+
+WORKDIR /usr/src/app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# 2. Build
+
+FROM node:20-alpine AS builder
+
+WORKDIR /usr/src/app
+
+COPY --from=deps /usr/src/app/node_modules ./node_modules
+COPY . .
+
+RUN npm run build
+
+# 3. Imagen de producción
+
+FROM node:20-alpine AS prod
+
+WORKDIR /usr/src/app
+
+ENV NODE_ENV=production
+ENV PORT=3004
+
+COPY --from=builder /usr/src/app/package.json ./
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+COPY --from=builder /usr/src/app/.next ./.next
+COPY --from=builder /usr/src/app/public ./public
+
+EXPOSE 3004
+
+CMD ["npm", "start"]
