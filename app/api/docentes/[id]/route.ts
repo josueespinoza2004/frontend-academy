@@ -12,7 +12,7 @@ export async function GET(_req: Request, context: any) {
     if (!res.ok) {
       const err = await res
         .json()
-        .catch(() => ({ message: "Error en gateway" }));
+        .catch(() => ({ message: "Error en el servidor gateway" }));
       return NextResponse.json(
         { error: err?.message || "Error al obtener" },
         { status: res.status },
