@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Estudiante } from "@/types/estudiante.interface";
 import EstudianteForm from "./EstudianteForm";
 import EstudianteDetalle from "./EstudianteDetalle";
-import EstudianteAvatar from "./EstudianteAvatar";
 
 type FormData = {
   nombres: string;
@@ -35,8 +34,39 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<FormData>(emptyForm);
   const [viewStudent, setViewStudent] = useState<Estudiante | null>(null);
-  const [avatarStudentId, setAvatarStudentId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [avatars, setAvatars] = useState<Record<number, string>>({});
+
+  useEffect(() => {
+    estudiantes.forEach((est) => {
+      loadAvatarUrl(est.id);
+    });
+  }, [estudiantes]);
+
+  async function loadAvatarUrl(estudianteId: number) {
+    try {
+      const res = await fetch(`/api/files/model/${estudianteId}`);
+      if (!res.ok) return;
+
+      const data = await res.json();
+      const fileData = data?.data;
+
+      if (fileData) {
+        const imgRes = await fetch(`/api/files/${fileData.id}`);
+        if (imgRes.ok) {
+          const imgData = await imgRes.json();
+          if (imgData?.buffer && imgData?.file) {
+            const buffer = new Uint8Array(imgData.buffer);
+            const blob = new Blob([buffer], { type: imgData.file.mime });
+            const url = URL.createObjectURL(blob);
+            setAvatars((prev) => ({ ...prev, [estudianteId]: url }));
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error al cargar avatar:", error);
+    }
+  }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
@@ -180,14 +210,8 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
       {viewStudent && (
         <EstudianteDetalle
           estudiante={viewStudent}
+          avatarUrl={avatars[viewStudent.id] || null}
           onClose={() => setViewStudent(null)}
-        />
-      )}
-
-      {avatarStudentId && (
-        <EstudianteAvatar
-          estudianteId={avatarStudentId}
-          onClose={() => setAvatarStudentId(null)}
         />
       )}
 
@@ -199,6 +223,9 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
           onChange={handleChange}
           onSubmit={editingId ? handleUpdate : handleCreate}
           onCancel={handleCancelForm}
+          onAvatarChange={() => {
+            if (editingId) loadAvatarUrl(editingId);
+          }}
         />
       )}
 
@@ -219,6 +246,7 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
         <table className="w-full text-sm table-auto">
           <thead className="bg-gray-100 dark:bg-gray-800">
             <tr>
+              <th className="text-left p-3">Avatar</th>
               <th className="text-left p-3">Nombres</th>
               <th className="text-left p-3">Paterno</th>
               <th className="text-left p-3">Materno</th>
@@ -235,6 +263,19 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
                 key={est.id}
                 className="border-t odd:bg-white even:bg-gray-50 dark:odd:bg-transparent dark:even:bg-transparent"
               >
+                <td className="p-3">
+                  {avatars[est.id] ? (
+                    <img
+                      src={avatars[est.id]}
+                      alt="Avatar"
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                      <span className="text-gray-400 text-xs">—</span>
+                    </div>
+                  )}
+                </td>
                 <td className="p-3">{est.nombres}</td>
                 <td className="p-3">{est.paterno}</td>
                 <td className="p-3">{est.materno}</td>
@@ -248,12 +289,6 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
                     disabled={loadingId === est.id}
                   >
                     Ver
-                  </button>
-                  <button
-                    onClick={() => setAvatarStudentId(est.id)}
-                    className="px-3 py-1 text-sm font-medium text-white bg-teal-600 rounded hover:bg-teal-700"
-                  >
-                    Avatar
                   </button>
                   <button
                     onClick={() => handleEditClick(est)}
