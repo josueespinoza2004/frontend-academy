@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Estudiante } from "@/types/estudiante.interface";
 import EstudianteForm from "./EstudianteForm";
 import EstudianteDetalle from "./EstudianteDetalle";
+import EstudianteAvatar from "./EstudianteAvatar";
 
 type FormData = {
   nombres: string;
@@ -34,6 +35,7 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<FormData>(emptyForm);
   const [viewStudent, setViewStudent] = useState<Estudiante | null>(null);
+  const [avatarStudentId, setAvatarStudentId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -182,6 +184,13 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
         />
       )}
 
+      {avatarStudentId && (
+        <EstudianteAvatar
+          estudianteId={avatarStudentId}
+          onClose={() => setAvatarStudentId(null)}
+        />
+      )}
+
       {showForm && (
         <EstudianteForm
           formData={formData}
@@ -239,6 +248,12 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
                     disabled={loadingId === est.id}
                   >
                     Ver
+                  </button>
+                  <button
+                    onClick={() => setAvatarStudentId(est.id)}
+                    className="px-3 py-1 text-sm font-medium text-white bg-teal-600 rounded hover:bg-teal-700"
+                  >
+                    Avatar
                   </button>
                   <button
                     onClick={() => handleEditClick(est)}
