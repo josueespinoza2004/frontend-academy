@@ -1,6 +1,6 @@
 # 1. Dependencias
 
-FROM node:20-alpine AS deps
+FROM --platform=linux/amd64 node:20-alpine AS deps
 
 WORKDIR /usr/src/app
 
@@ -9,7 +9,7 @@ RUN npm ci
 
 # 2. Build
 
-FROM node:20-alpine AS builder
+FROM --platform=linux/amd64 node:20-alpine AS builder
 
 WORKDIR /usr/src/app
 
@@ -20,7 +20,7 @@ RUN npm run build
 
 # 3. Imagen de producción
 
-FROM node:20-alpine AS prod
+FROM --platform=linux/amd64 node:20-alpine AS prod
 
 WORKDIR /usr/src/app
 
