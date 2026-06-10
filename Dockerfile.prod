@@ -4,34 +4,41 @@ FROM --platform=linux/amd64 node:20-alpine AS deps
 
 WORKDIR /usr/src/app
 
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json ./
+COPY package-lock.json ./
 
-# 2. Build
+RUN npm install --frozen-lockfile
 
-FROM --platform=linux/amd64 node:20-alpine AS builder
+# 2. Build - Construir
+
+FROM --platform=linux/amd64 node:20-alpine AS build
 
 WORKDIR /usr/src/app
 
 COPY --from=deps /usr/src/app/node_modules ./node_modules
+
 COPY . .
+
+ARG GATEWAY_URL
+ENV GATEWAY_URL=${GATEWAY_URL}
 
 RUN npm run build
 
-# 3. Imagen de producción
+# 3. Prod
 
 FROM --platform=linux/amd64 node:20-alpine AS prod
 
 WORKDIR /usr/src/app
 
 ENV NODE_ENV=production
-ENV PORT=3004
+ENV NEXT_TELEMETRY_DISABLED=1
 
-COPY --from=builder /usr/src/app/package.json ./
-COPY --from=builder /usr/src/app/node_modules ./node_modules
-COPY --from=builder /usr/src/app/.next ./.next
-COPY --from=builder /usr/src/app/public ./public
+# Copiar archivos necesarios para next start
+COPY --from=build /usr/src/app/public ./public
+COPY --from=build /usr/src/app/.next ./.next
+COPY --from=build /usr/src/app/node_modules ./node_modules
+COPY --from=build /usr/src/app/package.json ./package.json
 
 EXPOSE 3004
 
-CMD ["npm", "start"]
+CMD ["npm", "run", "start"]
