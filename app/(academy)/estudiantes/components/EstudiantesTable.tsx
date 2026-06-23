@@ -281,8 +281,8 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
                         {avatars[est.id] && (
                           <AvatarImage src={avatars[est.id]} alt={est.nombres} />
                         )}
-                        <AvatarFallback className="text-xs">
-                          {getInitials(est)}
+                        <AvatarFallback className="bg-gray-200">
+                          <UserCircle className="h-6 w-6 text-gray-400" />
                         </AvatarFallback>
                       </Avatar>
                     </TableCell>
