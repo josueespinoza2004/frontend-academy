@@ -83,7 +83,7 @@ export default function AcademyLayout({
         {/* Footer */}
         <div className="border-t px-6 py-4">
           <p className="text-xs text-muted-foreground">
-            Sistema Academico v1.0
+            Sistemas Distribuidos
           </p>
         </div>
       </aside>

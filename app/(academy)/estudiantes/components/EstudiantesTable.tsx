@@ -60,11 +60,10 @@ const SEXOS: Record<number, string> = {
 
 const ETNIAS: Record<number, string> = {
   1: "Mestizo",
-  2: "Indigena",
-  3: "Afroecuatoriano",
-  4: "Montubio",
-  5: "Blanco",
-  6: "Otro",
+  2: "Sumo",
+  3: "Mayagna",
+  4: "Garifuna",
+  5: "Otro",
 };
 
 type Props = {
@@ -288,14 +287,9 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
                       </Avatar>
                     </TableCell>
                     <TableCell>
-                      <div>
-                        <p className="font-medium">
-                          {est.nombres} {est.paterno}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {est.materno || "—"}
-                        </p>
-                      </div>
+                      <p className="font-medium">
+                        {est.nombres} {est.paterno}{est.materno ? ` ${est.materno}` : ""}
+                      </p>
                     </TableCell>
                     <TableCell className="text-sm">{est.direccion}</TableCell>
                     <TableCell>
