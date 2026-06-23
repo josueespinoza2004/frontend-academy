@@ -131,7 +131,7 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
     }));
   }
 
-  async function handleCreate(e: React.FormEvent) {
+  async function handleCreate(e: React.FormEvent, pendingAvatar?: File | null) {
     e.preventDefault();
     try {
       setSubmitting(true);
@@ -149,6 +149,20 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
 
       const data = await res.json();
       const nuevo: Estudiante = data?.data || data;
+
+      // Si hay un avatar pendiente, subirlo con el ID del nuevo estudiante
+      if (pendingAvatar && nuevo.id) {
+        const formDataUpload = new FormData();
+        formDataUpload.append("file", pendingAvatar);
+        const uploadRes = await fetch(`/api/files/upload/${nuevo.id}`, {
+          method: "POST",
+          body: formDataUpload,
+        });
+        if (!uploadRes.ok) {
+          toast.warning("Estudiante creado, pero hubo un error al subir el avatar");
+        }
+      }
+
       setEstudiantes((prev) => [...prev, nuevo]);
       setFormData(emptyForm);
       setShowForm(false);
@@ -196,7 +210,7 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
     setShowForm(true);
   }
 
-  async function handleUpdate(e: React.FormEvent) {
+  async function handleUpdate(e: React.FormEvent, _pendingAvatar?: File | null) {
     e.preventDefault();
     if (!editingId) return;
 

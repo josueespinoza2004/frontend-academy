@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Upload, Trash2, Loader2, Camera } from "lucide-react";
+import { Upload, Trash2, Loader2, Camera, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,7 +46,7 @@ type Props = {
   submitting: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSelectChange: (name: string, value: string | null) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.FormEvent, pendingAvatar?: File | null) => void;
   onCancel: () => void;
   onAvatarChange?: () => void;
 };
@@ -65,16 +65,29 @@ export default function EstudianteForm({
   const [avatarFile, setAvatarFile] = useState<FileRecord | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingPreview, setPendingPreview] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (editingId) {
       loadAvatar(editingId);
+      setPendingFile(null);
+      setPendingPreview(null);
     } else {
       setAvatarFile(null);
       setAvatarUrl(null);
+      setPendingFile(null);
+      setPendingPreview(null);
     }
   }, [editingId]);
+
+  useEffect(() => {
+    if (!open) {
+      setPendingFile(null);
+      setPendingPreview(null);
+    }
+  }, [open]);
 
   async function loadAvatar(estudianteId: number) {
     try {
@@ -107,7 +120,8 @@ export default function EstudianteForm({
     }
   }
 
-  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  // Para modo edición: sube directamente
+  async function handleUploadEdit(e: React.ChangeEvent<HTMLInputElement>) {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile || !editingId) return;
 
@@ -137,6 +151,24 @@ export default function EstudianteForm({
     }
   }
 
+  // Para modo creación: solo selecciona y muestra preview
+  function handleSelectFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+
+    setPendingFile(selectedFile);
+    const url = URL.createObjectURL(selectedFile);
+    setPendingPreview(url);
+  }
+
+  function handleRemovePending() {
+    setPendingFile(null);
+    if (pendingPreview) {
+      URL.revokeObjectURL(pendingPreview);
+      setPendingPreview(null);
+    }
+  }
+
   async function handleDeleteAvatar() {
     if (!avatarFile) return;
 
@@ -160,6 +192,11 @@ export default function EstudianteForm({
     }
   }
 
+  function handleFormSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    onSubmit(e, pendingFile);
+  }
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
       <DialogContent className="sm:max-w-lg">
@@ -169,8 +206,8 @@ export default function EstudianteForm({
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={onSubmit} className="space-y-5">
-          {/* Avatar section - only when editing */}
+        <form onSubmit={handleFormSubmit} className="space-y-5">
+          {/* Avatar section - modo edición */}
           {editingId && (
             <>
               <div className="flex items-center gap-4">
@@ -215,7 +252,59 @@ export default function EstudianteForm({
                   ref={inputRef}
                   type="file"
                   accept="image/*"
-                  onChange={handleUpload}
+                  onChange={handleUploadEdit}
+                  className="hidden"
+                />
+              </div>
+              <Separator />
+            </>
+          )}
+
+          {/* Avatar section - modo creación */}
+          {!editingId && (
+            <>
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <Avatar className="h-20 w-20">
+                    {pendingPreview && (
+                      <AvatarImage src={pendingPreview} alt="Preview" />
+                    )}
+                    <AvatarFallback className="text-lg">
+                      <ImagePlus className="h-6 w-6 text-muted-foreground" />
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => inputRef.current?.click()}
+                  >
+                    <Upload className="mr-2 h-3.5 w-3.5" />
+                    {pendingPreview ? "Cambiar imagen" : "Seleccionar avatar"}
+                  </Button>
+                  {pendingPreview && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRemovePending}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-3.5 w-3.5" />
+                      Quitar
+                    </Button>
+                  )}
+                  {!pendingPreview && (
+                    <p className="text-xs text-muted-foreground">Opcional</p>
+                  )}
+                </div>
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleSelectFile}
                   className="hidden"
                 />
               </div>
