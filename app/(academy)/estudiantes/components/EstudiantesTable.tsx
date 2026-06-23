@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { Estudiante } from "@/types/estudiante.interface";
+import { useEstudiantes } from "@/hooks/useEstudiantes";
+import { useAvatars } from "@/hooks/useAvatars";
 import EstudianteForm from "./EstudianteForm";
 import EstudianteDetalle from "./EstudianteDetalle";
-import { toast } from "sonner";
 import {
   Plus,
   Eye,
@@ -15,7 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -59,10 +60,11 @@ const SEXOS: Record<number, string> = {
 
 const ETNIAS: Record<number, string> = {
   1: "Mestizo",
-  2: "Sumo",
-  3: "Mayagna",
-  4: "Garifuna",
-  5: "Otro",
+  2: "Indigena",
+  3: "Afroecuatoriano",
+  4: "Montubio",
+  5: "Blanco",
+  6: "Otro",
 };
 
 type Props = {
@@ -70,49 +72,27 @@ type Props = {
 };
 
 export default function EstudiantesTable({ estudiantes: initial }: Props) {
-  const [estudiantes, setEstudiantes] = useState<Estudiante[]>(initial);
-  const [loadingId, setLoadingId] = useState<number | null>(null);
+  const {
+    estudiantes,
+    loadingId,
+    submitting,
+    createEstudiante,
+    updateEstudiante,
+    deleteEstudiante,
+    getEstudiante,
+  } = useEstudiantes(initial);
+
+  const estudianteIds = useMemo(
+    () => estudiantes.map((e) => e.id),
+    [estudiantes]
+  );
+  const { avatars, reloadAvatar } = useAvatars(estudianteIds);
+
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<FormData>(emptyForm);
   const [viewStudent, setViewStudent] = useState<Estudiante | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [avatars, setAvatars] = useState<Record<number, string>>({});
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
-
-  useEffect(() => {
-    estudiantes.forEach((est) => {
-      loadAvatarUrl(est.id);
-    });
-  }, [estudiantes]);
-
-  async function loadAvatarUrl(estudianteId: number) {
-    try {
-      const res = await fetch(`/api/files/model/${estudianteId}`);
-      if (!res.ok) return;
-
-      const data = await res.json();
-      const fileData = data?.data;
-
-      if (fileData) {
-        const imgRes = await fetch(`/api/files/${fileData.id}`);
-        if (imgRes.ok) {
-          const imgData = await imgRes.json();
-          if (imgData?.buffer && imgData?.file) {
-            const buffer = new Uint8Array(imgData.buffer);
-            const blob = new Blob([buffer], { type: imgData.file.mime });
-            const url = URL.createObjectURL(blob);
-            setAvatars((prev) => ({ ...prev, [estudianteId]: url }));
-          }
-        } else if (imgRes.status === 404) {
-          await fetch(`/api/files/${fileData.id}`, { method: "DELETE" });
-          console.log(`Avatar huérfano limpiado para estudiante ${estudianteId}`);
-        }
-      }
-    } catch (error) {
-      console.error("Error al cargar avatar:", error);
-    }
-  }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
@@ -132,68 +112,32 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
 
   async function handleCreate(e: React.FormEvent, pendingAvatar?: File | null) {
     e.preventDefault();
-    try {
-      setSubmitting(true);
-      const res = await fetch("/api/estudiantes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        toast.error(err?.error || "Error al crear el estudiante");
-        return;
-      }
-
-      const data = await res.json();
-      const nuevo: Estudiante = data?.data || data;
-
-      // Si hay un avatar pendiente, subirlo con el ID del nuevo estudiante
-      if (pendingAvatar && nuevo.id) {
-        const formDataUpload = new FormData();
-        formDataUpload.append("file", pendingAvatar);
-        const uploadRes = await fetch(`/api/files/upload/${nuevo.id}`, {
-          method: "POST",
-          body: formDataUpload,
-        });
-        if (!uploadRes.ok) {
-          toast.warning("Estudiante creado, pero hubo un error al subir el avatar");
-        }
-      }
-
-      setEstudiantes((prev) => [...prev, nuevo]);
+    const result = await createEstudiante(formData, pendingAvatar);
+    if (result) {
       setFormData(emptyForm);
       setShowForm(false);
-      toast.success("Estudiante creado exitosamente");
-    } catch (error) {
-      console.error(error);
-      toast.error("Error al crear el estudiante");
-    } finally {
-      setSubmitting(false);
+    }
+  }
+
+  async function handleUpdate(e: React.FormEvent, _pendingAvatar?: File | null) {
+    e.preventDefault();
+    if (!editingId) return;
+    const result = await updateEstudiante(editingId, formData);
+    if (result) {
+      setFormData(emptyForm);
+      setEditingId(null);
+      setShowForm(false);
     }
   }
 
   async function handleGetOne(id: number) {
-    try {
-      setLoadingId(id);
-      const res = await fetch(`/api/estudiantes/${id}`);
+    const estudiante = await getEstudiante(id);
+    if (estudiante) setViewStudent(estudiante);
+  }
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        toast.error(err?.error || "Error al obtener el estudiante");
-        return;
-      }
-
-      const data = await res.json();
-      const estudiante: Estudiante = data?.data || data;
-      setViewStudent(estudiante);
-    } catch (error) {
-      console.error(error);
-      toast.error("Error al obtener el estudiante");
-    } finally {
-      setLoadingId(null);
-    }
+  async function handleDelete(id: number) {
+    const success = await deleteEstudiante(id);
+    if (success) setDeleteConfirm(null);
   }
 
   function handleEditClick(est: Estudiante) {
@@ -207,63 +151,6 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
       etnia_id: est.etnia_id,
     });
     setShowForm(true);
-  }
-
-  async function handleUpdate(e: React.FormEvent, _pendingAvatar?: File | null) {
-    e.preventDefault();
-    if (!editingId) return;
-
-    try {
-      setSubmitting(true);
-      const res = await fetch(`/api/estudiantes/${editingId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        toast.error(err?.error || "Error al actualizar el estudiante");
-        return;
-      }
-
-      const data = await res.json();
-      const actualizado: Estudiante = data?.data || data;
-      setEstudiantes((prev) =>
-        prev.map((e) => (e.id === editingId ? actualizado : e))
-      );
-      setFormData(emptyForm);
-      setEditingId(null);
-      setShowForm(false);
-      toast.success("Estudiante actualizado exitosamente");
-    } catch (error) {
-      console.error(error);
-      toast.error("Error al actualizar el estudiante");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  async function handleDelete(id: number) {
-    try {
-      setLoadingId(id);
-      const res = await fetch(`/api/estudiantes/${id}`, { method: "DELETE" });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        toast.error(err?.error || "Error al eliminar el estudiante");
-        return;
-      }
-
-      setEstudiantes((prev) => prev.filter((e) => e.id !== id));
-      toast.success("Estudiante eliminado exitosamente");
-    } catch (error) {
-      console.error(error);
-      toast.error("Error al eliminar el estudiante");
-    } finally {
-      setLoadingId(null);
-      setDeleteConfirm(null);
-    }
   }
 
   function handleCancelForm() {
@@ -296,7 +183,7 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
         onSubmit={editingId ? handleUpdate : handleCreate}
         onCancel={handleCancelForm}
         onAvatarChange={() => {
-          if (editingId) loadAvatarUrl(editingId);
+          if (editingId) reloadAvatar(editingId);
         }}
       />
 
