@@ -70,6 +70,11 @@ export default function EstudianteForm({
             const url = URL.createObjectURL(blob);
             setAvatarUrl(url);
           }
+        } else if (imgRes.status === 404) {
+              await fetch(`/api/files/${fileData.id}`, { method: "DELETE" });
+          setAvatarFile(null);
+          setAvatarUrl(null);
+          console.warn(`Avatar huérfano limpiado para estudiante ${estudianteId}`);
         }
       }
     } catch (error) {
