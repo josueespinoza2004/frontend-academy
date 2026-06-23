@@ -1,7 +1,7 @@
 "use client";
 
 import { Estudiante } from "@/types/estudiante.interface";
-import { MapPin, User, Users } from "lucide-react";
+import { MapPin, User, Users, UserCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -66,7 +66,9 @@ export default function EstudianteDetalle({
             {avatarUrl && (
               <AvatarImage src={avatarUrl} alt={estudiante.nombres} />
             )}
-            <AvatarFallback className="text-2xl">{initials}</AvatarFallback>
+            <AvatarFallback className="bg-gray-200">
+              <UserCircle className="h-14 w-14 text-gray-400" />
+            </AvatarFallback>
           </Avatar>
 
           <div className="text-center">
