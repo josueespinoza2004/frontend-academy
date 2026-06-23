@@ -383,11 +383,10 @@ export default function EstudianteForm({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="1">Mestizo</SelectItem>
-                  <SelectItem value="2">Indigena</SelectItem>
-                  <SelectItem value="3">Afroecuatoriano</SelectItem>
-                  <SelectItem value="4">Montubio</SelectItem>
-                  <SelectItem value="5">Blanco</SelectItem>
-                  <SelectItem value="6">Otro</SelectItem>
+                  <SelectItem value="2">Sumo</SelectItem>
+                  <SelectItem value="3">Mayagna</SelectItem>
+                  <SelectItem value="4">Garifuna</SelectItem>
+                  <SelectItem value="5">Otro</SelectItem>
                 </SelectContent>
               </Select>
             </div>
