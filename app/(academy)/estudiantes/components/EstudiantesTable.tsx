@@ -63,7 +63,7 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
           }
         } else if (imgRes.status === 404) {
           await fetch(`/api/files/${fileData.id}`, { method: "DELETE" });
-          console.warn(`Avatar huérfano limpiado para estudiante ${estudianteId}`);
+          console.log(`Avatar huérfano limpiado para estudiante ${estudianteId}`);
         }
       }
     } catch (error) {
