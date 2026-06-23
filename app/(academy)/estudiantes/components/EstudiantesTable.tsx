@@ -4,6 +4,35 @@ import { useEffect, useState } from "react";
 import { Estudiante } from "@/types/estudiante.interface";
 import EstudianteForm from "./EstudianteForm";
 import EstudianteDetalle from "./EstudianteDetalle";
+import { toast } from "sonner";
+import {
+  Plus,
+  Eye,
+  Pencil,
+  Trash2,
+  Loader2,
+  UserCircle,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type FormData = {
   nombres: string;
@@ -23,6 +52,20 @@ const emptyForm: FormData = {
   etnia_id: 1,
 };
 
+const SEXOS: Record<number, string> = {
+  1: "Masculino",
+  2: "Femenino",
+};
+
+const ETNIAS: Record<number, string> = {
+  1: "Mestizo",
+  2: "Indígena",
+  3: "Afroecuatoriano",
+  4: "Montubio",
+  5: "Blanco",
+  6: "Otro",
+};
+
 type Props = {
   estudiantes: Estudiante[];
 };
@@ -36,6 +79,7 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
   const [viewStudent, setViewStudent] = useState<Estudiante | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [avatars, setAvatars] = useState<Record<number, string>>({});
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
   useEffect(() => {
     estudiantes.forEach((est) => {
@@ -79,6 +123,14 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
     }));
   }
 
+  function handleSelectChange(name: string, value: string | null) {
+    if (value === null) return;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: Number(value),
+    }));
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     try {
@@ -91,7 +143,7 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        alert(err?.error || "Error al crear el estudiante");
+        toast.error(err?.error || "Error al crear el estudiante");
         return;
       }
 
@@ -100,9 +152,10 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
       setEstudiantes((prev) => [...prev, nuevo]);
       setFormData(emptyForm);
       setShowForm(false);
+      toast.success("Estudiante creado exitosamente");
     } catch (error) {
       console.error(error);
-      alert("Error al crear el estudiante");
+      toast.error("Error al crear el estudiante");
     } finally {
       setSubmitting(false);
     }
@@ -115,7 +168,7 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        alert(err?.error || "Error al obtener el estudiante");
+        toast.error(err?.error || "Error al obtener el estudiante");
         return;
       }
 
@@ -124,7 +177,7 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
       setViewStudent(estudiante);
     } catch (error) {
       console.error(error);
-      alert("Error al obtener el estudiante");
+      toast.error("Error al obtener el estudiante");
     } finally {
       setLoadingId(null);
     }
@@ -157,48 +210,46 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        alert(err?.error || "Error al actualizar el estudiante");
+        toast.error(err?.error || "Error al actualizar el estudiante");
         return;
       }
 
       const data = await res.json();
       const actualizado: Estudiante = data?.data || data;
       setEstudiantes((prev) =>
-        prev.map((e) => (e.id === editingId ? actualizado : e)),
+        prev.map((e) => (e.id === editingId ? actualizado : e))
       );
       setFormData(emptyForm);
       setEditingId(null);
       setShowForm(false);
+      toast.success("Estudiante actualizado exitosamente");
     } catch (error) {
       console.error(error);
-      alert("Error al actualizar el estudiante");
+      toast.error("Error al actualizar el estudiante");
     } finally {
       setSubmitting(false);
     }
   }
 
   async function handleDelete(id: number) {
-    const confirmDelete = confirm(
-      "¿Eliminar este estudiante? Esta acción no puede deshacerse.",
-    );
-    if (!confirmDelete) return;
-
     try {
       setLoadingId(id);
       const res = await fetch(`/api/estudiantes/${id}`, { method: "DELETE" });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        alert(err?.error || "Error al eliminar el estudiante");
+        toast.error(err?.error || "Error al eliminar el estudiante");
         return;
       }
 
       setEstudiantes((prev) => prev.filter((e) => e.id !== id));
+      toast.success("Estudiante eliminado exitosamente");
     } catch (error) {
       console.error(error);
-      alert("Error al eliminar el estudiante");
+      toast.error("Error al eliminar el estudiante");
     } finally {
       setLoadingId(null);
+      setDeleteConfirm(null);
     }
   }
 
@@ -208,110 +259,197 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
     setFormData(emptyForm);
   }
 
+  function getInitials(est: Estudiante) {
+    return `${est.nombres.charAt(0)}${est.paterno.charAt(0)}`.toUpperCase();
+  }
+
   return (
-    <div className="max-w-7xl mx-auto p-4">
-      {viewStudent && (
-        <EstudianteDetalle
-          estudiante={viewStudent}
-          avatarUrl={avatars[viewStudent.id] || null}
-          onClose={() => setViewStudent(null)}
-        />
-      )}
+    <div className="space-y-6">
+      {/* Detalle modal */}
+      <EstudianteDetalle
+        estudiante={viewStudent}
+        avatarUrl={viewStudent ? avatars[viewStudent.id] || null : null}
+        onClose={() => setViewStudent(null)}
+      />
 
-      {showForm && (
-        <EstudianteForm
-          formData={formData}
-          editingId={editingId}
-          submitting={submitting}
-          onChange={handleChange}
-          onSubmit={editingId ? handleUpdate : handleCreate}
-          onCancel={handleCancelForm}
-          onAvatarChange={() => {
-            if (editingId) loadAvatarUrl(editingId);
-          }}
-        />
-      )}
+      {/* Form dialog */}
+      <EstudianteForm
+        open={showForm}
+        formData={formData}
+        editingId={editingId}
+        submitting={submitting}
+        onChange={handleChange}
+        onSelectChange={handleSelectChange}
+        onSubmit={editingId ? handleUpdate : handleCreate}
+        onCancel={handleCancelForm}
+        onAvatarChange={() => {
+          if (editingId) loadAvatarUrl(editingId);
+        }}
+      />
 
-      {!showForm && (
-        <button
+      {/* Delete confirmation dialog */}
+      <Dialog
+        open={deleteConfirm !== null}
+        onOpenChange={(open) => !open && setDeleteConfirm(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar eliminacion</DialogTitle>
+            <DialogDescription>
+              Esta accion no puede deshacerse. Se eliminara el estudiante y
+              todos sus datos asociados permanentemente.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteConfirm && handleDelete(deleteConfirm)}
+              disabled={loadingId === deleteConfirm}
+            >
+              {loadingId === deleteConfirm && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Estudiantes</h2>
+          <p className="text-muted-foreground">
+            Gestiona los estudiantes del sistema academico
+          </p>
+        </div>
+        <Button
           onClick={() => {
             setEditingId(null);
             setFormData(emptyForm);
             setShowForm(true);
           }}
-          className="mb-4 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700"
         >
-          Crear Estudiante
-        </button>
-      )}
-
-      <div className="overflow-x-auto rounded-lg shadow-sm bg-white/60 dark:bg-black/40">
-        <table className="w-full text-sm table-auto">
-          <thead className="bg-gray-100 dark:bg-gray-800">
-            <tr>
-              <th className="text-left p-3">Avatar</th>
-              <th className="text-left p-3">Nombres</th>
-              <th className="text-left p-3">Paterno</th>
-              <th className="text-left p-3">Materno</th>
-              <th className="text-left p-3">Direccion</th>
-              <th className="text-left p-3">Sexo</th>
-              <th className="text-left p-3">Etnia</th>
-              <th className="text-left p-3">Acciones</th>
-            </tr>
-          </thead>
-
-          <tbody className="divide-y">
-            {estudiantes.map((est) => (
-              <tr
-                key={est.id}
-                className="border-t odd:bg-white even:bg-gray-50 dark:odd:bg-transparent dark:even:bg-transparent"
-              >
-                <td className="p-3">
-                  {avatars[est.id] ? (
-                    <img
-                      src={avatars[est.id]}
-                      alt="Avatar"
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                      <span className="text-gray-400 text-xs">—</span>
-                    </div>
-                  )}
-                </td>
-                <td className="p-3">{est.nombres}</td>
-                <td className="p-3">{est.paterno}</td>
-                <td className="p-3">{est.materno}</td>
-                <td className="p-3">{est.direccion}</td>
-                <td className="p-3">{est.sexo_id}</td>
-                <td className="p-3">{est.etnia_id}</td>
-                <td className="p-3 flex gap-2">
-                  <button
-                    onClick={() => handleGetOne(est.id)}
-                    className="px-3 py-1 text-sm font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700 disabled:opacity-60"
-                    disabled={loadingId === est.id}
-                  >
-                    Ver
-                  </button>
-                  <button
-                    onClick={() => handleEditClick(est)}
-                    className="px-3 py-1 text-sm font-medium text-white bg-amber-600 rounded hover:bg-amber-700"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => handleDelete(est.id)}
-                    className="px-3 py-1 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-60"
-                    disabled={loadingId === est.id}
-                  >
-                    {loadingId === est.id ? "Eliminando..." : "Eliminar"}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+          <Plus className="mr-2 h-4 w-4" />
+          Nuevo Estudiante
+        </Button>
       </div>
+
+      {/* Table */}
+      <Card>
+        <CardContent className="p-0">
+          {estudiantes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <UserCircle className="h-12 w-12 text-muted-foreground/50" />
+              <h3 className="mt-4 text-lg font-medium">
+                No hay estudiantes registrados
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Comienza creando un nuevo estudiante
+              </p>
+              <Button
+                className="mt-4"
+                onClick={() => {
+                  setEditingId(null);
+                  setFormData(emptyForm);
+                  setShowForm(true);
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Crear Estudiante
+              </Button>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[60px]">Avatar</TableHead>
+                  <TableHead>Nombre Completo</TableHead>
+                  <TableHead>Direccion</TableHead>
+                  <TableHead>Sexo</TableHead>
+                  <TableHead>Etnia</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {estudiantes.map((est) => (
+                  <TableRow key={est.id}>
+                    <TableCell>
+                      <Avatar className="h-9 w-9">
+                        {avatars[est.id] && (
+                          <AvatarImage src={avatars[est.id]} alt={est.nombres} />
+                        )}
+                        <AvatarFallback className="text-xs">
+                          {getInitials(est)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">
+                          {est.nombres} {est.paterno}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {est.materno || "—"}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm">{est.direccion}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        {SEXOS[est.sexo_id] || est.sexo_id}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {ETNIAS[est.etnia_id] || est.etnia_id}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleGetOne(est.id)}
+                          disabled={loadingId === est.id}
+                          title="Ver detalle"
+                        >
+                          {loadingId === est.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditClick(est)}
+                          title="Editar"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteConfirm(est.id)}
+                          disabled={loadingId === est.id}
+                          title="Eliminar"
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

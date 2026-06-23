@@ -1,6 +1,27 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { Upload, Trash2, Loader2, Camera } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 
 type FormData = {
   nombres: string;
@@ -19,20 +40,24 @@ type FileRecord = {
 };
 
 type Props = {
+  open: boolean;
   formData: FormData;
   editingId: number | null;
   submitting: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSelectChange: (name: string, value: string | null) => void;
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
   onAvatarChange?: () => void;
 };
 
 export default function EstudianteForm({
+  open,
   formData,
   editingId,
   submitting,
   onChange,
+  onSelectChange,
   onSubmit,
   onCancel,
   onAvatarChange,
@@ -71,7 +96,7 @@ export default function EstudianteForm({
             setAvatarUrl(url);
           }
         } else if (imgRes.status === 404) {
-              await fetch(`/api/files/${fileData.id}`, { method: "DELETE" });
+          await fetch(`/api/files/${fileData.id}`, { method: "DELETE" });
           setAvatarFile(null);
           setAvatarUrl(null);
           console.log(`Avatar huérfano limpiado para estudiante ${estudianteId}`);
@@ -97,15 +122,16 @@ export default function EstudianteForm({
       });
 
       if (!res.ok) {
-        alert("Error al subir el avatar");
+        toast.error("Error al subir el avatar");
         return;
       }
 
       await loadAvatar(editingId);
       onAvatarChange?.();
+      toast.success("Avatar actualizado");
     } catch (error) {
       console.error("Error al subir avatar:", error);
-      alert("Error al subir el avatar");
+      toast.error("Error al subir el avatar");
     } finally {
       setUploading(false);
     }
@@ -114,163 +140,181 @@ export default function EstudianteForm({
   async function handleDeleteAvatar() {
     if (!avatarFile) return;
 
-    const confirmDelete = confirm("¿Eliminar el avatar?");
-    if (!confirmDelete) return;
-
     try {
-      const res = await fetch(`/api/files/${avatarFile.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/files/${avatarFile.id}`, {
+        method: "DELETE",
+      });
 
       if (!res.ok) {
-        alert("Error al eliminar el avatar");
+        toast.error("Error al eliminar el avatar");
         return;
       }
 
       setAvatarFile(null);
       setAvatarUrl(null);
       onAvatarChange?.();
+      toast.success("Avatar eliminado");
     } catch (error) {
       console.error("Error al eliminar avatar:", error);
-      alert("Error al eliminar el avatar");
+      toast.error("Error al eliminar el avatar");
     }
   }
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="mb-4 p-4 border rounded-lg bg-white dark:bg-gray-900 shadow"
-    >
-      <h3 className="text-lg font-semibold mb-3">
-        {editingId ? "Editar Estudiante" : "Crear Estudiante"}
-      </h3>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>
+            {editingId ? "Editar Estudiante" : "Nuevo Estudiante"}
+          </DialogTitle>
+        </DialogHeader>
 
-      {editingId && (
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Avatar</label>
-          <div className="flex items-center gap-3">
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt="Avatar"
-                className="w-16 h-16 rounded-full object-cover border"
-              />
-            ) : (
-              <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                <span className="text-gray-400 text-xs">Sin avatar</span>
+        <form onSubmit={onSubmit} className="space-y-5">
+          {/* Avatar section - only when editing */}
+          {editingId && (
+            <>
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <Avatar className="h-20 w-20">
+                    {avatarUrl && <AvatarImage src={avatarUrl} alt="Avatar" />}
+                    <AvatarFallback className="text-lg">
+                      <Camera className="h-6 w-6 text-muted-foreground" />
+                    </AvatarFallback>
+                  </Avatar>
+                  {uploading && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
+                      <Loader2 className="h-5 w-5 animate-spin text-white" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => inputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    <Upload className="mr-2 h-3.5 w-3.5" />
+                    {avatarUrl ? "Cambiar" : "Subir avatar"}
+                  </Button>
+                  {avatarUrl && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDeleteAvatar}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-3.5 w-3.5" />
+                      Eliminar
+                    </Button>
+                  )}
+                </div>
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleUpload}
+                  className="hidden"
+                />
               </div>
-            )}
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => inputRef.current?.click()}
-                disabled={uploading}
-                className="px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-60"
-              >
-                {uploading ? "Subiendo..." : avatarUrl ? "Cambiar" : "Subir Avatar"}
-              </button>
-              {avatarUrl && (
-                <button
-                  type="button"
-                  onClick={handleDeleteAvatar}
-                  className="px-3 py-1 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700"
-                >
-                  Eliminar
-                </button>
-              )}
-            </div>
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleUpload}
-              className="hidden"
-            />
-          </div>
-        </div>
-      )}
+              <Separator />
+            </>
+          )}
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-sm font-medium mb-1">Nombres</label>
-          <input
-            name="nombres"
-            value={formData.nombres}
-            onChange={onChange}
-            required
-            className="w-full p-2 border rounded dark:bg-gray-800"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Paterno</label>
-          <input
-            name="paterno"
-            value={formData.paterno}
-            onChange={onChange}
-            required
-            className="w-full p-2 border rounded dark:bg-gray-800"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Materno</label>
-          <input
-            name="materno"
-            value={formData.materno}
-            onChange={onChange}
-            className="w-full p-2 border rounded dark:bg-gray-800"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Dirección</label>
-          <input
-            name="direccion"
-            value={formData.direccion}
-            onChange={onChange}
-            required
-            className="w-full p-2 border rounded dark:bg-gray-800"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Sexo ID</label>
-          <input
-            name="sexo_id"
-            type="number"
-            value={formData.sexo_id}
-            onChange={onChange}
-            required
-            className="w-full p-2 border rounded dark:bg-gray-800"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Etnia ID</label>
-          <input
-            name="etnia_id"
-            type="number"
-            value={formData.etnia_id}
-            onChange={onChange}
-            required
-            className="w-full p-2 border rounded dark:bg-gray-800"
-          />
-        </div>
-      </div>
-      <div className="mt-3 flex gap-2">
-        <button
-          type="submit"
-          disabled={submitting}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-60"
-        >
-          {submitting
-            ? "Guardando..."
-            : editingId
-              ? "Actualizar"
-              : "Crear"}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded hover:bg-gray-700"
-        >
-          Cancelar
-        </button>
-      </div>
-    </form>
+          {/* Form fields */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="nombres">Nombres</Label>
+              <Input
+                id="nombres"
+                name="nombres"
+                value={formData.nombres}
+                onChange={onChange}
+                placeholder="Juan Carlos"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="paterno">Apellido Paterno</Label>
+              <Input
+                id="paterno"
+                name="paterno"
+                value={formData.paterno}
+                onChange={onChange}
+                placeholder="Garcia"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="materno">Apellido Materno</Label>
+              <Input
+                id="materno"
+                name="materno"
+                value={formData.materno}
+                onChange={onChange}
+                placeholder="Lopez"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="direccion">Direccion</Label>
+              <Input
+                id="direccion"
+                name="direccion"
+                value={formData.direccion}
+                onChange={onChange}
+                placeholder="Av. Principal 123"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Sexo</Label>
+              <Select
+                value={String(formData.sexo_id)}
+                onValueChange={(val) => onSelectChange("sexo_id", val)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Masculino</SelectItem>
+                  <SelectItem value="2">Femenino</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Etnia</Label>
+              <Select
+                value={String(formData.etnia_id)}
+                onValueChange={(val) => onSelectChange("etnia_id", val)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Mestizo</SelectItem>
+                  <SelectItem value="2">Indigena</SelectItem>
+                  <SelectItem value="3">Afroecuatoriano</SelectItem>
+                  <SelectItem value="4">Montubio</SelectItem>
+                  <SelectItem value="5">Blanco</SelectItem>
+                  <SelectItem value="6">Otro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {editingId ? "Actualizar" : "Crear"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
