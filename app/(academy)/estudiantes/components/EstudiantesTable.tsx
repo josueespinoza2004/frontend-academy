@@ -399,12 +399,12 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
                     </TableCell>
                     <TableCell className="text-sm">{est.direccion}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary">
+                      <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
                         {SEXOS[est.sexo_id] || est.sexo_id}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">
+                      <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
                         {ETNIAS[est.etnia_id] || est.etnia_id}
                       </Badge>
                     </TableCell>
@@ -416,6 +416,7 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
                           onClick={() => handleGetOne(est.id)}
                           disabled={loadingId === est.id}
                           title="Ver detalle"
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                         >
                           {loadingId === est.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -428,6 +429,7 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
                           size="icon"
                           onClick={() => handleEditClick(est)}
                           title="Editar"
+                          className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -437,7 +439,7 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
                           onClick={() => setDeleteConfirm(est.id)}
                           disabled={loadingId === est.id}
                           title="Eliminar"
-                          className="text-destructive hover:text-destructive"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

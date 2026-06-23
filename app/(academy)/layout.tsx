@@ -49,8 +49,10 @@ export default function AcademyLayout({
       >
         {/* Logo / Header */}
         <div className="flex h-16 items-center gap-2 px-6">
-          <BookOpen className="h-6 w-6 text-sidebar-primary" />
-          <span className="text-lg font-bold">Academy</span>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary">
+            <BookOpen className="h-4 w-4 text-sidebar-primary-foreground" />
+          </div>
+          <span className="text-lg font-bold text-white">Academy</span>
         </div>
 
         <Separator />

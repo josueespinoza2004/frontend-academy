@@ -73,8 +73,8 @@ export default function EstudianteDetalle({
 
         <div className="space-y-4 py-2">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50">
+              <MapPin className="h-4 w-4 text-amber-600" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Direccion</p>
@@ -83,24 +83,24 @@ export default function EstudianteDetalle({
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-              <User className="h-4 w-4 text-muted-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50">
+              <User className="h-4 w-4 text-blue-600" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Sexo</p>
-              <Badge variant="secondary">
+              <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
                 {SEXOS[estudiante.sexo_id] || estudiante.sexo_id}
               </Badge>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-              <Users className="h-4 w-4 text-muted-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50">
+              <Users className="h-4 w-4 text-emerald-600" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Etnia</p>
-              <Badge variant="outline">
+              <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
                 {ETNIAS[estudiante.etnia_id] || estudiante.etnia_id}
               </Badge>
             </div>
