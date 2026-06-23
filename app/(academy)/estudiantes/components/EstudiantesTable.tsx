@@ -235,7 +235,7 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Estudiantes</h2>
           <p className="text-muted-foreground">
-            Gestiona los estudiantes del sistema academico
+            {estudiantes.length} estudiante{estudiantes.length !== 1 ? "s" : ""} registrado{estudiantes.length !== 1 ? "s" : ""}
           </p>
         </div>
         <Button
