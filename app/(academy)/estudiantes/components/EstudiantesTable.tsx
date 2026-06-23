@@ -58,12 +58,25 @@ const SEXOS: Record<number, string> = {
   2: "Femenino",
 };
 
+const SEXO_COLORS: Record<number, string> = {
+  1: "bg-blue-100 text-blue-700 hover:bg-blue-100",
+  2: "bg-pink-100 text-pink-700 hover:bg-pink-100",
+};
+
 const ETNIAS: Record<number, string> = {
   1: "Mestizo",
   2: "Sumo",
   3: "Mayagna",
   4: "Garifuna",
   5: "Otro",
+};
+
+const ETNIA_COLORS: Record<number, string> = {
+  1: "bg-emerald-100 text-emerald-700 hover:bg-emerald-100",
+  2: "bg-amber-100 text-amber-700 hover:bg-amber-100",
+  3: "bg-purple-100 text-purple-700 hover:bg-purple-100",
+  4: "bg-orange-100 text-orange-700 hover:bg-orange-100",
+  5: "bg-gray-100 text-gray-700 hover:bg-gray-100",
 };
 
 type Props = {
@@ -293,12 +306,12 @@ export default function EstudiantesTable({ estudiantes: initial }: Props) {
                     </TableCell>
                     <TableCell className="text-sm">{est.direccion}</TableCell>
                     <TableCell>
-                      <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+                      <Badge className={SEXO_COLORS[est.sexo_id] || "bg-gray-100 text-gray-700"}>
                         {SEXOS[est.sexo_id] || est.sexo_id}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+                      <Badge className={ETNIA_COLORS[est.etnia_id] || "bg-gray-100 text-gray-700"}>
                         {ETNIAS[est.etnia_id] || est.etnia_id}
                       </Badge>
                     </TableCell>

@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Academy - Sistema Academico",
+  title: "Academy",
   description: "Sistema de gestion academica",
 };
 
